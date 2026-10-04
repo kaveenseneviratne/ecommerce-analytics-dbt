@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ecommerce-analytics-dbt"
+version = "1.0.0"
+description = "ELT pipeline and dbt models for the Olist Brazilian e-commerce dataset"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{ name = "Kaveen Seneviratne" }]
+license = { text = "MIT" }
+dependencies = [
+    "dbt-core>=1.10,<2.0",
+    "dbt-bigquery>=1.10,<2.0",
+    "dbt-duckdb>=1.10,<2.0",
+    "duckdb>=1.1",
+    "google-cloud-bigquery>=3.20",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pre-commit>=3.7",
+    "pytest>=8.0",
+    "ruff>=0.6",
+    "sqlfluff>=3.2",
+    "sqlfluff-templater-dbt>=3.2",
+]
+
+[project.scripts]
+olist = "olist_loader.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests/python"]
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "UP", "N", "SIM", "RUF"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests/python"]
+addopts = "-ra --strict-markers"

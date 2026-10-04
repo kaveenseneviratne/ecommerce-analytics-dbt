@@ -1,0 +1,30 @@
+version: 2
+
+sources:
+  - name: olist
+    description: >
+      Raw Olist marketplace exports, landed unchanged by the `olist load` command.
+      Every column is a string; staging models apply types.
+    schema: "{{ var('raw_schema') }}"
+    tables:
+      - name: orders
+        description: One row per order.
+      - name: order_items
+        description: One row per item within an order.
+      - name: order_payments
+        description: One row per payment method used on an order.
+      - name: order_reviews
+        description: >
+          Customer reviews. Not one row per order: some orders have several reviews and
+          a few review ids are attached to more than one order.
+      - name: customers
+        description: >
+          One row per customer_id. Olist issues a new customer_id for every order, so the
+          real person is customer_unique_id.
+      - name: sellers
+      - name: products
+        description: Column names keep Olist's original spelling ("lenght").
+      - name: geolocation
+        description: Several coordinates per zip prefix, including some outside Brazil.
+      - name: product_category_name_translation
+        description: Portuguese to English category names. Two categories are missing.

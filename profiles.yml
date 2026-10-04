@@ -1,0 +1,22 @@
+# No secrets live here. BigQuery uses your gcloud login, DuckDB is a local file.
+#   dbt build                 -> local DuckDB (sample data or the real CSVs)
+#   dbt build --target dev    -> your BigQuery project
+ecommerce_analytics:
+  target: local
+  outputs:
+    local:
+      type: duckdb
+      path: "{{ env_var('DUCKDB_PATH', 'olist.duckdb') }}"
+      schema: analytics
+      threads: 4
+
+    dev:
+      type: bigquery
+      method: oauth
+      project: "{{ env_var('GCP_PROJECT', 'set-the-GCP_PROJECT-env-var') }}"
+      dataset: analytics
+      location: EU
+      threads: 4
+      job_execution_timeout_seconds: 300
+      job_retries: 1
+      priority: interactive

@@ -1,0 +1,32 @@
+# Data: the Kaggle files stay out of git (see README for the download link)
+data/raw/*
+!data/raw/.gitkeep
+data/sample/
+
+# Local warehouse
+*.duckdb
+*.duckdb.wal
+
+# dbt
+target/
+dbt_packages/
+logs/
+.user.yml
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+
+# Tooling
+.pytest_cache/
+.ruff_cache/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store

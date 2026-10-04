@@ -1,0 +1,166 @@
+version: 2
+
+# Staging: one model per source table. Rename, cast and tidy only; no joins, no business logic.
+#
+# Test severity follows one rule: checks on facts about the source data that we don't control
+# are `warn` (they surface data quality issues without blocking the build); checks on logic
+# we wrote are `error`.
+
+models:
+  - name: stg_olist__orders
+    description: One row per order, typed and with consistently named timestamps.
+    columns:
+      - name: order_id
+        description: Primary key.
+        data_tests: [unique, not_null]
+      - name: customer_id
+        description: Per-order customer id. Join to customers to get the real person.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_olist__customers')
+                field: customer_id
+      - name: order_status
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [delivered, shipped, canceled, unavailable, invoiced, processing,
+                         created, approved]
+      - name: purchased_at
+        data_tests: [not_null]
+      - name: estimated_delivery_at
+        description: Delivery date promised to the customer at checkout (midnight).
+
+  - name: stg_olist__order_items
+    description: One row per item within an order.
+    columns:
+      - name: order_item_id
+        description: Surrogate key of order_id and item_sequence.
+        data_tests: [unique, not_null]
+      - name: item_sequence
+        description: Position of the item in the order (1, 2, 3...).
+      - name: order_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_olist__orders')
+                field: order_id
+      - name: product_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_olist__products')
+                field: product_id
+      - name: seller_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_olist__sellers')
+                field: seller_id
+      - name: price
+        description: Item price in BRL, excluding freight.
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: freight_value
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+
+  - name: stg_olist__order_payments
+    description: One row per payment method used on an order.
+    columns:
+      - name: payment_id
+        data_tests: [unique, not_null]
+      - name: order_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_olist__orders')
+                field: order_id
+      - name: payment_type
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [credit_card, boleto, voucher, debit_card, not_defined]
+      - name: installments
+        description: Number of card instalments. A handful of rows are 0 in the source.
+
+  - name: stg_olist__order_reviews
+    description: Customer reviews. An order can have more than one; see int_reviews__latest_by_order.
+    columns:
+      - name: order_review_id
+        data_tests:
+          - unique:
+              config:
+                severity: warn
+      - name: order_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_olist__orders')
+                field: order_id
+      - name: review_score
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [1, 2, 3, 4, 5]
+                quote: false
+
+  - name: stg_olist__customers
+    description: One row per per-order customer id.
+    columns:
+      - name: customer_id
+        data_tests: [unique, not_null]
+      - name: customer_unique_id
+        description: Stable id for the person across orders.
+        data_tests: [not_null]
+      - name: zip_code_prefix
+        description: First five digits of the postcode, zero-padded.
+      - name: state_code
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('brazil_states')
+                field: state_code
+
+  - name: stg_olist__sellers
+    columns:
+      - name: seller_id
+        data_tests: [unique, not_null]
+      - name: state_code
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('brazil_states')
+                field: state_code
+
+  - name: stg_olist__products
+    columns:
+      - name: product_id
+        data_tests: [unique, not_null]
+      - name: category_name_pt
+        description: Portuguese category name. Null for about 2% of products.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_olist__product_categories')
+                field: category_name_pt
+              config:
+                severity: warn
+
+  - name: stg_olist__geolocation
+    description: Raw coordinates. Several rows per zip prefix; see int_geolocation__zip_centroids.
+
+  - name: stg_olist__product_categories
+    columns:
+      - name: category_name_pt
+        data_tests: [unique, not_null]
+      - name: category_name
+        data_tests: [not_null]

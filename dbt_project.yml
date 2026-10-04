@@ -1,0 +1,42 @@
+name: ecommerce_analytics
+version: "1.0.0"
+config-version: 2
+profile: ecommerce_analytics
+
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests/dbt"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+docs-paths: ["docs"]
+clean-targets: ["target", "dbt_packages"]
+
+vars:
+  raw_schema: olist_raw
+  # Olist data is thin before 2017 and stops abruptly in early September 2018.
+  # Reporting models only cover full, representative months.
+  reporting_start_date: "2017-01-01"
+  reporting_end_date: "2018-08-31"
+  # Sellers with fewer orders than this are too noisy to rank or flag.
+  min_seller_orders: 10
+  seller_late_rate_alert: 0.15
+  seller_review_alert: 3.5
+
+models:
+  ecommerce_analytics:
+    staging:
+      +materialized: view
+      +schema: staging
+    intermediate:
+      +materialized: view
+      +schema: intermediate
+    marts:
+      +materialized: table
+      core:
+        +schema: core
+      reporting:
+        +schema: reporting
+
+seeds:
+  ecommerce_analytics:
+    +schema: reference

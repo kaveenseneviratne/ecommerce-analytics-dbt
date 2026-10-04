@@ -1,0 +1,15 @@
+version: 2
+
+seeds:
+  - name: brazil_states
+    description: Brazilian state codes with full names and IBGE macro-regions.
+    columns:
+      - name: state_code
+        data_tests:
+          - unique
+          - not_null
+      - name: region
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["North", "Northeast", "Central-West", "Southeast", "South"]

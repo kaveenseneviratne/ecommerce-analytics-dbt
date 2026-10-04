@@ -1,0 +1,68 @@
+version: 2
+
+# Reporting marts: pre-aggregated, dashboard-ready tables. Each one answers a specific
+# business question and is filtered to the reporting window set in dbt_project.yml.
+
+models:
+  - name: rpt_monthly_kpis
+    description: Orders, revenue, customers and service levels by month.
+    columns:
+      - name: month_start
+        data_tests: [unique, not_null]
+      - name: revenue
+        description: Value of valid orders (items + freight), in BRL.
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: new_customers
+        description: Customers whose first ever order was placed this month.
+      - name: late_delivery_rate
+        description: Share of delivered orders that arrived after the promised date.
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 1
+      - name: revenue_growth_mom
+        description: Revenue change versus the previous month, as a fraction.
+      - name: revenue_rolling_3m
+        description: Revenue over this month and the two before it.
+
+  - name: rpt_delivery_vs_reviews
+    description: Review scores by how early or late the order arrived.
+    columns:
+      - name: delivery_timeliness
+        data_tests: [unique, not_null]
+      - name: avg_review_score
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 1
+                max_value: 5
+
+  - name: rpt_seller_performance
+    description: One row per seller with revenue ranking and service quality.
+    columns:
+      - name: seller_id
+        data_tests: [unique, not_null]
+      - name: cumulative_revenue_share
+        description: Share of all revenue earned by this seller and every higher-ranked seller.
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 1.000001
+      - name: needs_attention
+        description: >
+          Enough orders to judge (min_seller_orders), and either a late rate above
+          seller_late_rate_alert or an average review below seller_review_alert.
+        data_tests: [not_null]
+
+  - name: rpt_category_performance
+    description: One row per product category.
+    columns:
+      - name: category_name
+        data_tests: [unique, not_null]
+      - name: freight_to_price_ratio
+        description: Freight charged per BRL of item price. High values mean shipping hurts conversion.

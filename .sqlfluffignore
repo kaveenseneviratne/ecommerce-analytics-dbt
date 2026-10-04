@@ -1,0 +1,5 @@
+target/
+target_bq/
+dbt_packages/
+macros/
+tests/dbt/generic/

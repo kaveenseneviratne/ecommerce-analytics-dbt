@@ -1,0 +1,65 @@
+version: 2
+
+# Intermediate: reusable building blocks that reshape staging data to a new grain.
+# Not exposed to BI tools.
+
+models:
+  - name: int_reviews__latest_by_order
+    description: One review per order, keeping the most recently answered one.
+    columns:
+      - name: order_id
+        data_tests: [unique, not_null]
+
+  - name: int_payments__aggregated_to_orders
+    description: Payments rolled up to one row per order.
+    columns:
+      - name: order_id
+        data_tests: [unique, not_null]
+      - name: primary_payment_type
+        description: The payment method that covered the largest share of the order.
+        data_tests: [not_null]
+
+  - name: int_order_items__aggregated_to_orders
+    description: Items rolled up to one row per order.
+    columns:
+      - name: order_id
+        data_tests: [unique, not_null]
+      - name: item_count
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 1
+
+  - name: int_geolocation__zip_centroids
+    description: One averaged coordinate per zip prefix, with points outside Brazil removed.
+    columns:
+      - name: zip_code_prefix
+        data_tests: [unique, not_null]
+      - name: latitude
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: -33.8
+                max_value: 5.3
+
+unit_tests:
+  - name: test_latest_review_wins
+    description: >
+      When an order has several reviews, keep the most recently answered one; a review with
+      no answer timestamp should lose to one that has it.
+    model: int_reviews__latest_by_order
+    given:
+      - input: ref('stg_olist__order_reviews')
+        rows:
+          - {order_id: o1, review_id: r_old, review_score: 1,
+             review_created_at: "2018-01-01 00:00:00", review_answered_at: "2018-01-02 10:00:00"}
+          - {order_id: o1, review_id: r_new, review_score: 5,
+             review_created_at: "2018-01-05 00:00:00", review_answered_at: "2018-01-06 10:00:00"}
+          - {order_id: o2, review_id: r_unanswered, review_score: 2,
+             review_created_at: "2018-02-03 00:00:00", review_answered_at: null}
+          - {order_id: o2, review_id: r_answered, review_score: 4,
+             review_created_at: "2018-02-01 00:00:00", review_answered_at: "2018-02-02 09:00:00"}
+    expect:
+      rows:
+        - {order_id: o1, review_id: r_new, review_score: 5}
+        - {order_id: o2, review_id: r_answered, review_score: 4}

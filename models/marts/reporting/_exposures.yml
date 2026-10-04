@@ -1,0 +1,18 @@
+version: 2
+
+exposures:
+  - name: ecommerce_performance_dashboard
+    label: E-commerce Performance Dashboard
+    type: dashboard
+    maturity: high
+    url: https://lookerstudio.google.com/  # replace with your published report link
+    description: >
+      Looker Studio report covering monthly KPIs, the delivery-versus-reviews analysis,
+      seller scorecards and category performance.
+    depends_on:
+      - ref('rpt_monthly_kpis')
+      - ref('rpt_delivery_vs_reviews')
+      - ref('rpt_seller_performance')
+      - ref('rpt_category_performance')
+    owner:
+      name: Kaveen Seneviratne

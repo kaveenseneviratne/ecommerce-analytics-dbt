@@ -1,0 +1,46 @@
+[sqlfluff]
+templater = dbt
+dialect = duckdb
+max_line_length = 100
+# House style: lowercase SQL, trailing commas, explicit aliases, one CTE per step.
+# structure.column_order is off because grouping related columns together reads better
+# than sqlfluff's "simple columns first" ordering.
+exclude_rules = structure.using, structure.column_order
+
+[sqlfluff:templater:dbt]
+project_dir = .
+profiles_dir = .
+profile = ecommerce_analytics
+target = local
+
+[sqlfluff:indentation]
+tab_space_size = 4
+indent_unit = space
+implicit_indents = allow
+
+[sqlfluff:layout:type:comma]
+line_position = trailing
+
+[sqlfluff:rules:capitalisation.keywords]
+capitalisation_policy = lower
+
+[sqlfluff:rules:capitalisation.identifiers]
+extended_capitalisation_policy = lower
+
+[sqlfluff:rules:capitalisation.functions]
+extended_capitalisation_policy = lower
+
+[sqlfluff:rules:capitalisation.literals]
+capitalisation_policy = lower
+
+[sqlfluff:rules:capitalisation.types]
+extended_capitalisation_policy = lower
+
+[sqlfluff:rules:aliasing.table]
+aliasing = explicit
+
+[sqlfluff:rules:aliasing.column]
+aliasing = explicit
+
+[sqlfluff:rules:ambiguous.column_references]
+group_by_and_order_by_style = explicit

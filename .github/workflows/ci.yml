@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install
+        run: |
+          python -m pip install -e ".[dev]"
+          dbt deps
+
+      - name: Python lint and tests
+        run: |
+          ruff check src tests/python
+          ruff format --check src tests/python
+          pytest
+
+      # The real dataset isn't in the repo, so CI builds against synthetic data with the
+      # same files, columns and quirks. This proves every model compiles, runs and passes
+      # its tests on every push.
+      - name: Load sample data
+        run: |
+          olist sample --out data/sample
+          olist load --target duckdb --data-dir data/sample
+
+      - name: dbt build
+        run: dbt build
+
+      - name: SQL lint
+        run: sqlfluff lint models analyses tests/dbt
