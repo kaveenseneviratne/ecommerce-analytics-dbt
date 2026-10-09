@@ -6,7 +6,7 @@
 
 An ELT pipeline and dimensional model for ~100k orders from Olist, a Brazilian marketplace.
 Raw CSVs land in BigQuery, dbt turns them into a tested star schema, and a Looker Studio
-dashboard answers four business.
+dashboard answers four business questions.
 
 **[View the dashboard](<looker-studio-link>)** · **[Browse the dbt docs and lineage](https://<your-username>.github.io/ecommerce-analytics-dbt/)**
 
